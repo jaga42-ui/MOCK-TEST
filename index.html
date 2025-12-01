@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NET Mock Test Portal (Live)</title>
+    <title>NET Mock Test Portal (With Answer Key)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -25,8 +25,6 @@
         
         /* Input Styles */
         input[type="text"], input[type="number"], select, input[type="file"], input[type="password"] { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        
-        /* Textarea for big questions */
         textarea { width: 100%; height: 100px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
 
         button { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; font-size: 0.9rem; }
@@ -37,21 +35,30 @@
         .btn-secondary { background-color: #7f8c8d; color: white; }
         .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
 
-        /* Tables inside Questions */
-        .question-content table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9rem; }
-        .question-content th, .question-content td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .question-content th { background-color: #f2f2f2; }
-
+        /* General Styles */
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .question-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
+        .question-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fff; }
         .question-image { max-width: 100%; max-height: 300px; margin: 10px 0; border: 1px solid #ddd; display: block; }
+        .timer-badge { font-size: 1.2rem; background: #e74c3c; color: white; padding: 5px 10px; border-radius: 4px; }
+
+        /* Test Interface Styles */
         .options-list { list-style: none; padding: 0; }
         .options-list li { margin: 10px 0; padding: 10px; background: #f9f9f9; border: 1px solid #eee; cursor: pointer; transition: 0.2s; }
         .options-list li:hover { background: #ecf0f1; }
         .options-list li.selected { background-color: #d5dbdb; border-color: #bdc3c7; font-weight: bold; }
-        .timer-badge { font-size: 1.2rem; background: #e74c3c; color: white; padding: 5px 10px; border-radius: 4px; }
+
+        /* RESULT ANALYSIS STYLES (New) */
+        .analysis-card { border: 1px solid #eee; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 5px; text-align: left; }
+        .analysis-option { padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
+        
+        .status-correct { color: #27ae60; font-weight: bold; }
+        .status-wrong { color: #c0392b; font-weight: bold; }
+        .status-skipped { color: #f39c12; font-weight: bold; }
+
+        /* Answer Coloring */
+        .opt-correct { background-color: #d4edda !important; border-color: #c3e6cb !important; color: #155724; font-weight: bold; }
+        .opt-wrong { background-color: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24; text-decoration: line-through; }
     </style>
 </head>
 <body>
@@ -94,7 +101,14 @@
         <div id="result-screen" class="hidden" style="text-align: center;">
             <h2>Test Results</h2>
             <div style="font-size: 3rem; color: #27ae60; margin: 20px 0;" id="score-display">0 / 0</div>
-            <p id="percentage-display" style="font-size: 1.2rem;"></p>
+            <p id="percentage-display" style="font-size: 1.2rem; font-weight: bold;"></p>
+            
+            <hr>
+            <h3>Detailed Analysis</h3>
+            <div id="detailed-analysis-container" style="text-align: left;">
+                </div>
+
+            <br>
             <button class="btn-primary" onclick="showSection('student-dashboard')">Back to Dashboard</button>
         </div>
 
@@ -114,18 +128,15 @@
 
             <div style="background: #ecf0f1; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
                 <label>Test Title:</label>
-                <input type="text" id="new-test-title" placeholder="e.g., UGC NET Paper 1 - 2023">
+                <input type="text" id="new-test-title" placeholder="e.g., UGC NET Paper 1">
                 <label>Duration (Minutes):</label>
                 <input type="number" id="new-test-duration" value="60">
             </div>
             
             <div style="background: #fdfdfd; padding: 15px; border: 1px solid #ccc;">
-                <h4>Add Question (HTML & Math Supported)</h4>
-                <small style="color:#666;">Tip: You can paste HTML tables here. Use <code>\( x^2 \)</code> for math.</small>
-                
-                <textarea id="q-text" placeholder="Paste Question text here..."></textarea>
-                
-                <label>Upload Image (Diagrams/Graphs):</label>
+                <h4>Add Question</h4>
+                <textarea id="q-text" placeholder="Paste Question text (HTML allowed)..."></textarea>
+                <label>Upload Image:</label>
                 <input type="file" id="q-image" accept="image/*">
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -147,7 +158,7 @@
             </div>
 
             <div style="margin-top: 20px;">
-                <h4>Questions Queue (<span id="q-count">0</span>)</h4>
+                <h4>Queue (<span id="q-count">0</span>)</h4>
                 <div id="staging-list" style="max-height: 200px; overflow-y: auto; background: #fff; border:1px solid #eee; padding: 10px;"></div>
                 <br>
                 <button id="save-main-btn" class="btn-success" style="width: 100%; padding: 15px;" onclick="saveTestToCloud()">Save Test to Cloud</button>
@@ -157,7 +168,7 @@
 
     <script>
         // ==========================================
-        //  YOUR FIREBASE CONFIG IS INTEGRATED HERE
+        //  FIREBASE CONFIG (Already Filled)
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCkmD-GkkU8DkuzuhLDXmena2HOVfb-tbY",
@@ -275,7 +286,7 @@
         });
 
         async function processAndAddQuestion() {
-            const qText = document.getElementById('q-text').value; // Contains HTML
+            const qText = document.getElementById('q-text').value; 
             const imgInput = document.getElementById('q-image');
             const opts = [1,2,3,4].map(i => document.getElementById(`opt-${i}`).value);
             const correct = document.getElementById('correct-opt').value;
@@ -304,7 +315,7 @@
             list.innerHTML = newTestStaging.map((q, i) => `<div style="border-bottom:1px solid #eee; padding:5px; display:flex; justify-content:space-between;"><span>Q${i+1}</span> <button class="btn-danger btn-sm" onclick="newTestStaging.splice(${i},1);renderStagingQueue()">X</button></div>`).join('');
         }
 
-        // --- STUDENT UI (RENDERING RICH TEXT) ---
+        // --- STUDENT UI ---
         function renderStudentTestList() {
             document.getElementById('test-list-container').innerHTML = allTests.map(t => `<div class="question-card flex-row"><div><strong>${t.title}</strong><br><small>${t.questions.length} Qs | ${t.duration} min</small></div><button class="btn-primary" onclick="startTest('${t.id}')">Start</button></div>`).join('');
         }
@@ -335,12 +346,10 @@
             const q = currentTest.questions[currentQuestionIndex];
             const container = document.getElementById('question-container');
             
-            // Build Options with HTML support
             let optsHtml = q.options.map((opt, i) => 
                 `<li class="${userAnswers[currentQuestionIndex] === i ? 'selected' : ''}" onclick="selectAnswer(${i})">${opt}</li>`
             ).join('');
 
-            // Render content using innerHTML to support tables/math
             container.innerHTML = `
                 <div class="question-card">
                     <h4>Q${currentQuestionIndex + 1}</h4>
@@ -350,7 +359,6 @@
                 </div>
             `;
             
-            // Trigger MathJax to process the new content
             if(window.MathJax) MathJax.typesetPromise();
 
             const isLast = currentQuestionIndex === currentTest.questions.length - 1;
@@ -361,14 +369,58 @@
         function selectAnswer(i) { userAnswers[currentQuestionIndex] = i; renderQuestion(); }
         function nextQuestion() { if(userAnswers[currentQuestionIndex] === null) return alert("Select answer!"); currentQuestionIndex++; renderQuestion(); }
         
+        // --- NEW: DETAILED ANALYSIS ---
         function submitTest() {
             clearInterval(timerInterval);
             let score = 0;
-            currentTest.questions.forEach((q, i) => { if(userAnswers[i] === q.answer) score++; });
+            const analysisContainer = document.getElementById('detailed-analysis-container');
+            analysisContainer.innerHTML = ''; // Clear previous
+
+            currentTest.questions.forEach((q, i) => { 
+                const userChoice = userAnswers[i];
+                const isCorrect = (userChoice === q.answer);
+                if(isCorrect) score++;
+
+                // Determine status label
+                let statusLabel = "";
+                if (userChoice === null) statusLabel = `<span class="status-skipped">Skipped</span>`;
+                else if (isCorrect) statusLabel = `<span class="status-correct">Correct</span>`;
+                else statusLabel = `<span class="status-wrong">Wrong</span>`;
+
+                // Build Options for Review
+                let reviewOptsHtml = q.options.map((opt, optIdx) => {
+                    let className = "analysis-option";
+                    // If this option is the Correct Answer -> Green
+                    if (optIdx === q.answer) className += " opt-correct";
+                    // If User selected this but it was Wrong -> Red
+                    else if (userChoice === optIdx && !isCorrect) className += " opt-wrong";
+                    
+                    return `<div class="${className}">${opt}</div>`;
+                }).join('');
+
+                // Create Card
+                const card = document.createElement('div');
+                card.className = "analysis-card";
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>Q${i+1}</strong>
+                        ${statusLabel}
+                    </div>
+                    <div class="question-content" style="margin:10px 0;">${q.question}</div>
+                    ${q.image ? `<img src="${q.image}" class="question-image">` : ''}
+                    <div>${reviewOptsHtml}</div>
+                `;
+                analysisContainer.appendChild(card);
+            });
+
             showSection('result-screen');
             document.getElementById('score-display').innerText = `${score} / ${currentTest.questions.length}`;
-            document.getElementById('percentage-display').innerText = `Percentage: ${((score/currentTest.questions.length)*100).toFixed(2)}%`;
+            document.getElementById('percentage-display').innerText = `Score: ${((score/currentTest.questions.length)*100).toFixed(2)}%`;
+            
+            // Re-render Math for the analysis section
+            if(window.MathJax) MathJax.typesetPromise();
         }
+
         function quitTest() { if(confirm("Quit?")) showSection('student-dashboard'); }
 
         // Initial Load
