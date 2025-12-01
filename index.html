@@ -3,89 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NET Mock Test Portal (With Answer Key)</title>
+    <title>NET Mock Test Portal (Student Accounts)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
         /* --- CSS --- */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
-        nav { background-color: #2c3e50; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
-        nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
-        nav a { color: white; text-decoration: none; cursor: pointer; font-weight: bold; }
-        nav a:hover { color: #f39c12; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; }
         
-        .container { max-width: 900px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .hidden { display: none; }
+        /* Navigation */
+        nav { background-color: #2c3e50; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        nav h1 { margin: 0; font-size: 1.2rem; }
+        nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
+        nav a { color: white; text-decoration: none; cursor: pointer; font-weight: bold; opacity: 0.9; }
+        nav a:hover { opacity: 1; color: #f1c40f; }
+
+        /* Containers */
+        .container { max-width: 900px; margin: 2rem auto; background: white; padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .hidden { display: none !important; }
         .flex-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         
-        /* Input Styles */
-        input[type="text"], input[type="number"], select, input[type="file"], input[type="password"] { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        textarea { width: 100%; height: 100px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
-
-        button { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; font-size: 0.9rem; }
+        /* Forms */
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; box-sizing: border-box; }
+        textarea { height: 100px; resize: vertical; }
+        
+        /* Buttons */
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.2s; }
         .btn-primary { background-color: #3498db; color: white; }
         .btn-success { background-color: #27ae60; color: white; }
         .btn-danger { background-color: #c0392b; color: white; }
         .btn-warning { background-color: #f39c12; color: white; }
-        .btn-secondary { background-color: #7f8c8d; color: white; }
-        .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
+        .btn-secondary { background-color: #95a5a6; color: white; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* General Styles */
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: inline-block; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .question-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fff; }
-        .question-image { max-width: 100%; max-height: 300px; margin: 10px 0; border: 1px solid #ddd; display: block; }
-        .timer-badge { font-size: 1.2rem; background: #e74c3c; color: white; padding: 5px 10px; border-radius: 4px; }
+        /* Login Screen */
+        .auth-box { max-width: 400px; margin: 0 auto; text-align: center; }
+        .auth-toggle { color: #3498db; cursor: pointer; text-decoration: underline; margin-top: 10px; display: block; }
 
-        /* Test Interface Styles */
-        .options-list { list-style: none; padding: 0; }
-        .options-list li { margin: 10px 0; padding: 10px; background: #f9f9f9; border: 1px solid #eee; cursor: pointer; transition: 0.2s; }
-        .options-list li:hover { background: #ecf0f1; }
-        .options-list li.selected { background-color: #d5dbdb; border-color: #bdc3c7; font-weight: bold; }
-
-        /* RESULT ANALYSIS STYLES (New) */
-        .analysis-card { border: 1px solid #eee; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 5px; text-align: left; }
-        .analysis-option { padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
+        /* Tables & Lists */
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.9rem; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; color: #333; }
         
+        .history-item { background: #fff; border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #3498db; }
+        
+        /* Test Taking */
+        .question-card { padding: 20px; border: 1px solid #eee; margin-bottom: 20px; background: #fff; border-radius: 5px; }
+        .options-list { list-style: none; padding: 0; }
+        .options-list li { padding: 12px; margin: 8px 0; background: #fdfdfd; border: 1px solid #eee; border-radius: 4px; cursor: pointer; }
+        .options-list li:hover { background: #f1f1f1; }
+        .options-list li.selected { background-color: #e8f4fc; border-color: #3498db; color: #2c3e50; font-weight: 600; }
+        
+        /* Results */
         .status-correct { color: #27ae60; font-weight: bold; }
         .status-wrong { color: #c0392b; font-weight: bold; }
-        .status-skipped { color: #f39c12; font-weight: bold; }
+        .opt-correct { background-color: #d4edda !important; border-color: #c3e6cb !important; }
+        .opt-wrong { background-color: #f8d7da !important; border-color: #f5c6cb !important; text-decoration: line-through; }
 
-        /* Answer Coloring */
-        .opt-correct { background-color: #d4edda !important; border-color: #c3e6cb !important; color: #155724; font-weight: bold; }
-        .opt-wrong { background-color: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24; text-decoration: line-through; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 25px; height: 25px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <nav>
-        <h1>NET Mock Test Hub</h1>
-        <ul>
-            <li><a onclick="showSection('student-dashboard')">Student Zone</a></li>
+        <h1>NET Mock Test Portal</h1>
+        <ul id="nav-links" class="hidden">
+            <li><a onclick="showSection('student-dashboard')">Dashboard</a></li>
             <li><a onclick="attemptAdminLogin()">Admin Panel</a></li>
+            <li><a onclick="handleLogout()" style="color:#e74c3c;">Logout</a></li>
         </ul>
     </nav>
 
     <div class="container">
         
-        <div id="loading-indicator" class="hidden" style="text-align:center; padding: 20px;">
-            <div class="loader"></div> Loading...
+        <div id="loading-indicator" class="hidden" style="text-align:center; padding: 30px;">
+            <div class="loader"></div> Processing...
         </div>
 
-        <div id="student-dashboard">
-            <h2>Available Mock Tests</h2>
-            <div id="test-list-container"></div>
+        <div id="auth-screen">
+            <div class="auth-box">
+                <h2 id="auth-title">Student Login</h2>
+                <input type="email" id="auth-email" placeholder="Email Address">
+                <input type="password" id="auth-pass" placeholder="Password">
+                <button id="auth-btn" class="btn-primary" style="width:100%" onclick="handleAuth()">Login</button>
+                <span class="auth-toggle" onclick="toggleAuthMode()">New student? Create Account</span>
+            </div>
+        </div>
+
+        <div id="student-dashboard" class="hidden">
+            <h2 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Welcome, <span id="user-display-email" style="color:#3498db;"></span></h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h3>📝 Available Tests</h3>
+                    <div id="test-list-container">Loading tests...</div>
+                </div>
+                
+                <div style="background: #fafafa; padding: 15px; border-radius: 5px;">
+                    <h3>📊 Your History</h3>
+                    <div id="history-container">
+                        <p style="color:#777">No tests taken yet.</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="test-interface" class="hidden">
             <div class="flex-row">
                 <h3 id="test-title-display" style="margin:0;">Test Title</h3>
-                <div id="timer-display" class="timer-badge">00:00</div>
+                <div id="timer-display" style="background:#e74c3c; color:white; padding:5px 10px; border-radius:4px; font-weight:bold;">00:00</div>
             </div>
             <hr>
             <div id="question-container"></div>
@@ -93,7 +126,7 @@
                 <button class="btn-danger" onclick="quitTest()">Quit</button>
                 <div>
                     <button id="next-btn" class="btn-primary" onclick="nextQuestion()">Next</button>
-                    <button id="submit-btn" class="btn-success hidden" onclick="submitTest()">Submit</button>
+                    <button id="submit-btn" class="btn-success hidden" onclick="submitTest()">Submit & Save</button>
                 </div>
             </div>
         </div>
@@ -102,12 +135,9 @@
             <h2>Test Results</h2>
             <div style="font-size: 3rem; color: #27ae60; margin: 20px 0;" id="score-display">0 / 0</div>
             <p id="percentage-display" style="font-size: 1.2rem; font-weight: bold;"></p>
-            
+            <p style="color:#777; font-size: 0.9rem;">(This score has been saved to your profile)</p>
             <hr>
-            <h3>Detailed Analysis</h3>
-            <div id="detailed-analysis-container" style="text-align: left;">
-                </div>
-
+            <div id="detailed-analysis-container" style="text-align: left;"></div>
             <br>
             <button class="btn-primary" onclick="showSection('student-dashboard')">Back to Dashboard</button>
         </div>
@@ -115,61 +145,51 @@
         <div id="admin-panel" class="hidden">
             <div class="flex-row">
                 <h3>Admin Dashboard</h3>
-                <button class="btn-danger btn-sm" onclick="logoutAdmin()">Logout</button>
+                <button class="btn-secondary btn-sm" onclick="showSection('student-dashboard')">Exit to Student View</button>
             </div>
             
-            <div id="admin-test-list" style="margin-top: 20px;"></div>
-            <hr style="margin: 30px 0;">
-
-            <div class="flex-row">
-                <h3 id="form-header">Create New Test</h3>
-                <button id="cancel-edit-btn" class="btn-secondary hidden" onclick="resetAdminForm()">Cancel Edit</button>
+            <div style="margin-top:20px;">
+                <button class="btn-primary" onclick="document.getElementById('create-test-form').classList.toggle('hidden')">+ Create New Test</button>
             </div>
 
-            <div style="background: #ecf0f1; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                <label>Test Title:</label>
-                <input type="text" id="new-test-title" placeholder="e.g., UGC NET Paper 1">
-                <label>Duration (Minutes):</label>
-                <input type="number" id="new-test-duration" value="60">
-            </div>
-            
-            <div style="background: #fdfdfd; padding: 15px; border: 1px solid #ccc;">
-                <h4>Add Question</h4>
-                <textarea id="q-text" placeholder="Paste Question text (HTML allowed)..."></textarea>
-                <label>Upload Image:</label>
-                <input type="file" id="q-image" accept="image/*">
+            <div id="create-test-form" class="hidden" style="margin-top:20px; background: #ecf0f1; padding: 20px; border-radius: 5px;">
+                <h4>Create / Edit Test</h4>
+                <input type="text" id="new-test-title" placeholder="Test Title (e.g. June 2023 Paper)">
+                <input type="number" id="new-test-duration" placeholder="Duration (Minutes)" value="60">
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <textarea id="opt-1" style="height:50px;" placeholder="Option 1"></textarea>
-                    <textarea id="opt-2" style="height:50px;" placeholder="Option 2"></textarea>
-                    <textarea id="opt-3" style="height:50px;" placeholder="Option 3"></textarea>
-                    <textarea id="opt-4" style="height:50px;" placeholder="Option 4"></textarea>
+                <div style="background:white; padding:15px; border:1px solid #ddd; margin-top:10px;">
+                    <p><strong>Add Question:</strong></p>
+                    <textarea id="q-text" placeholder="Question Text (HTML/Tables allowed)"></textarea>
+                    <input type="file" id="q-image" accept="image/*">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <input type="text" id="opt-1" placeholder="Option 1">
+                        <input type="text" id="opt-2" placeholder="Option 2">
+                        <input type="text" id="opt-3" placeholder="Option 3">
+                        <input type="text" id="opt-4" placeholder="Option 4">
+                    </div>
+                    <label>Correct Answer:</label>
+                    <select id="correct-opt">
+                        <option value="0">Option 1</option>
+                        <option value="1">Option 2</option>
+                        <option value="2">Option 3</option>
+                        <option value="3">Option 4</option>
+                    </select>
+                    <button class="btn-secondary" style="width:100%; margin-top:10px;" onclick="addQuestionToStage()">+ Add to Queue</button>
                 </div>
-                
-                <label>Correct Option:</label>
-                <select id="correct-opt">
-                    <option value="0">Option 1</option>
-                    <option value="1">Option 2</option>
-                    <option value="2">Option 3</option>
-                    <option value="3">Option 4</option>
-                </select>
-                <br><br>
-                <button class="btn-secondary" onclick="processAndAddQuestion()">+ Add Question to Queue</button>
+
+                <p>Questions in Queue: <strong id="q-count">0</strong></p>
+                <div id="staging-list" style="background:white; padding:10px; max-height:150px; overflow-y:auto; margin-bottom:10px;"></div>
+                <button id="save-test-btn" class="btn-success" onclick="saveTestToCloud()">Save Test to Cloud</button>
             </div>
 
-            <div style="margin-top: 20px;">
-                <h4>Queue (<span id="q-count">0</span>)</h4>
-                <div id="staging-list" style="max-height: 200px; overflow-y: auto; background: #fff; border:1px solid #eee; padding: 10px;"></div>
-                <br>
-                <button id="save-main-btn" class="btn-success" style="width: 100%; padding: 15px;" onclick="saveTestToCloud()">Save Test to Cloud</button>
-            </div>
+            <hr>
+            <h4>Existing Tests</h4>
+            <div id="admin-test-list"></div>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        //  FIREBASE CONFIG (Already Filled)
-        // ==========================================
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCkmD-GkkU8DkuzuhLDXmena2HOVfb-tbY",
             authDomain: "mock-test-88fbc.firebaseapp.com",
@@ -179,164 +199,155 @@
             appId: "1:45637040362:web:393d258292d58f99f53f93",
             measurementId: "G-ZQ0P06H40C"
         };
-        // ==========================================
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const ADMIN_PASSWORD = "admin"; 
+        const auth = firebase.auth();
+        const ADMIN_PASSWORD = "admin"; // Hardcoded for simplicity
 
+        // --- GLOBAL STATE ---
+        let currentUser = null;
         let allTests = [];
-        let editingId = null;
-        let isAdminLoggedIn = false;
         let currentTest = null;
         let currentQuestionIndex = 0;
         let userAnswers = [];
-        let newTestStaging = []; 
         let timerInterval = null;
+        let stagingQuestions = [];
+        let editingTestId = null;
+        let isRegistering = false;
 
-        // --- FETCH & SAVE ---
-        async function fetchTestsFromCloud() {
-            document.getElementById('loading-indicator').classList.remove('hidden');
-            try {
-                const snapshot = await db.collection("tests").orderBy('createdAt', 'desc').get();
-                allTests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderStudentTestList();
-                if(isAdminLoggedIn) renderAdminTestList();
-            } catch (error) { console.error(error); }
-            document.getElementById('loading-indicator').classList.add('hidden');
+        // --- AUTHENTICATION LOGIC ---
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('nav-links').classList.remove('hidden');
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('user-display-email').innerText = user.email;
+                showSection('student-dashboard');
+            } else {
+                currentUser = null;
+                document.getElementById('nav-links').classList.add('hidden');
+                showSection('auth-screen');
+            }
+        });
+
+        function toggleAuthMode() {
+            isRegistering = !isRegistering;
+            document.getElementById('auth-title').innerText = isRegistering ? "Create Student Account" : "Student Login";
+            document.getElementById('auth-btn').innerText = isRegistering ? "Register" : "Login";
+            document.querySelector('.auth-toggle').innerText = isRegistering ? "Back to Login" : "New student? Create Account";
         }
 
-        async function saveTestToCloud() {
-            const title = document.getElementById('new-test-title').value;
-            const duration = document.getElementById('new-test-duration').value;
-            if(!title || newTestStaging.length === 0) return alert("Title and Questions required.");
-            const testObj = {
-                title: title,
-                duration: parseInt(duration),
-                questions: newTestStaging,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            const btn = document.getElementById('save-main-btn');
-            btn.innerText = "Saving..."; btn.disabled = true;
+        async function handleAuth() {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
+            const btn = document.getElementById('auth-btn');
+            
+            if(!email || !pass) return alert("Please fill all fields");
+            
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+
             try {
-                if(editingId) await db.collection("tests").doc(editingId).update(testObj);
-                else await db.collection("tests").add(testObj);
-                alert("Saved!"); resetAdminForm(); fetchTestsFromCloud();
-            } catch (e) { alert("Error: " + e.message); }
-            btn.innerText = "Save Test to Cloud"; btn.disabled = false;
+                if (isRegistering) {
+                    await auth.createUserWithEmailAndPassword(email, pass);
+                    // Create user profile in Firestore
+                    await db.collection('users').doc(auth.currentUser.uid).set({
+                        email: email,
+                        history: []
+                    });
+                    alert("Account Created! Welcome.");
+                } else {
+                    await auth.signInWithEmailAndPassword(email, pass);
+                }
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+            
+            btn.disabled = false;
+            btn.innerText = isRegistering ? "Register" : "Login";
         }
 
-        async function deleteTestFromCloud(docId) {
-            if(!confirm("Delete?")) return;
-            await db.collection("tests").doc(docId).delete();
-            fetchTestsFromCloud();
+        function handleLogout() {
+            auth.signOut();
+            location.reload();
         }
 
         // --- NAVIGATION ---
         function showSection(id) {
             clearInterval(timerInterval);
             document.querySelectorAll('.container > div').forEach(div => {
-                if(div.id !== 'loading-indicator') div.classList.add('hidden');
+                if (div.id !== 'loading-indicator') div.classList.add('hidden');
             });
-            if(id === 'admin-panel' && !isAdminLoggedIn) { attemptAdminLogin(); return; }
             document.getElementById(id).classList.remove('hidden');
-            if(id === 'student-dashboard') fetchTestsFromCloud();
+
+            if(id === 'student-dashboard') loadDashboardData();
+            if(id === 'admin-panel') loadAdminData();
         }
 
-        function attemptAdminLogin() {
-            if (isAdminLoggedIn) { showSection('admin-panel'); return; }
-            if (prompt("Password:") === ADMIN_PASSWORD) { isAdminLoggedIn = true; showSection('admin-panel'); }
-            else { alert("Wrong Password"); showSection('student-dashboard'); }
-        }
-        function logoutAdmin() { isAdminLoggedIn = false; showSection('student-dashboard'); }
+        // --- DASHBOARD & HISTORY ---
+        async function loadDashboardData() {
+            document.getElementById('loading-indicator').classList.remove('hidden');
+            
+            // 1. Fetch Tests
+            try {
+                const snapshot = await db.collection('tests').orderBy('createdAt', 'desc').get();
+                allTests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                const testListHtml = allTests.length ? allTests.map(t => `
+                    <div class="question-card flex-row" style="padding:10px;">
+                        <div>
+                            <strong>${t.title}</strong><br>
+                            <small>${t.questions.length} Qs | ${t.duration} Mins</small>
+                        </div>
+                        <button class="btn-primary btn-sm" onclick="startTest('${t.id}')">Start</button>
+                    </div>
+                `).join('') : '<p>No tests available yet.</p>';
+                document.getElementById('test-list-container').innerHTML = testListHtml;
 
-        // --- ADMIN UI ---
-        function renderAdminTestList() {
-            const container = document.getElementById('admin-test-list');
-            container.innerHTML = allTests.length ? `<table><thead><tr><th>Title</th><th>Qs</th><th>Action</th></tr></thead><tbody>${allTests.map(t => `<tr><td>${t.title}</td><td>${t.questions.length}</td><td><button class="btn-warning btn-sm" onclick="editTest('${t.id}')">Edit</button> <button class="btn-danger btn-sm" onclick="deleteTestFromCloud('${t.id}')">Delete</button></td></tr>`).join('')}</tbody></table>` : '<p>No tests.</p>';
-        }
+                // 2. Fetch History
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                const history = userDoc.exists ? (userDoc.data().history || []) : [];
+                
+                // Sort history by date (newest first)
+                history.reverse();
 
-        function editTest(docId) {
-            const test = allTests.find(t => t.id === docId);
-            if(!test) return;
-            editingId = docId;
-            document.getElementById('new-test-title').value = test.title;
-            document.getElementById('new-test-duration').value = test.duration;
-            newTestStaging = [...test.questions]; 
-            renderStagingQueue();
-            document.getElementById('form-header').innerText = "Edit: " + test.title;
-            document.getElementById('save-main-btn').innerText = "Update";
-            document.getElementById('cancel-edit-btn').classList.remove('hidden');
-            document.getElementById('form-header').scrollIntoView({behavior: "smooth"});
-        }
+                const historyHtml = history.length ? history.map(h => `
+                    <div class="history-item">
+                        <div class="flex-row">
+                            <strong>${h.title}</strong>
+                            <span class="status-correct">${h.score} / ${h.total}</span>
+                        </div>
+                        <small style="color:#777">${new Date(h.date.seconds * 1000).toLocaleDateString()}</small>
+                    </div>
+                `).join('') : '<p>You haven\'t taken any tests yet.</p>';
+                document.getElementById('history-container').innerHTML = historyHtml;
 
-        function resetAdminForm() {
-            editingId = null; newTestStaging = [];
-            document.getElementById('new-test-title').value = '';
-            clearQuestionInputs(); renderStagingQueue();
-            document.getElementById('form-header').innerText = "Create New Test";
-            document.getElementById('save-main-btn').innerText = "Save Test to Cloud";
-            document.getElementById('cancel-edit-btn').classList.add('hidden');
-        }
-
-        // --- QUESTION LOGIC ---
-        const toBase64 = file => new Promise((resolve, reject) => {
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error);
-        });
-
-        async function processAndAddQuestion() {
-            const qText = document.getElementById('q-text').value; 
-            const imgInput = document.getElementById('q-image');
-            const opts = [1,2,3,4].map(i => document.getElementById(`opt-${i}`).value);
-            const correct = document.getElementById('correct-opt').value;
-
-            if(!qText && imgInput.files.length === 0) return alert("Add content.");
-            if(opts.some(o => !o)) return alert("Fill options.");
-
-            let imgData = null;
-            if (imgInput.files.length > 0) {
-                if(imgInput.files[0].size > 500000) return alert("Image too big (>500KB).");
-                imgData = await toBase64(imgInput.files[0]);
-            }
-
-            newTestStaging.push({ question: qText, image: imgData, options: opts, answer: parseInt(correct) });
-            clearQuestionInputs(); renderStagingQueue();
+            } catch (e) { console.error(e); }
+            
+            document.getElementById('loading-indicator').classList.add('hidden');
         }
 
-        function clearQuestionInputs() {
-            document.getElementById('q-text').value = ''; document.getElementById('q-image').value = ''; 
-            [1,2,3,4].forEach(i => document.getElementById(`opt-${i}`).value = '');
-        }
-
-        function renderStagingQueue() {
-            const list = document.getElementById('staging-list');
-            document.getElementById('q-count').innerText = newTestStaging.length;
-            list.innerHTML = newTestStaging.map((q, i) => `<div style="border-bottom:1px solid #eee; padding:5px; display:flex; justify-content:space-between;"><span>Q${i+1}</span> <button class="btn-danger btn-sm" onclick="newTestStaging.splice(${i},1);renderStagingQueue()">X</button></div>`).join('');
-        }
-
-        // --- STUDENT UI ---
-        function renderStudentTestList() {
-            document.getElementById('test-list-container').innerHTML = allTests.map(t => `<div class="question-card flex-row"><div><strong>${t.title}</strong><br><small>${t.questions.length} Qs | ${t.duration} min</small></div><button class="btn-primary" onclick="startTest('${t.id}')">Start</button></div>`).join('');
-        }
-
-        function startTest(docId) {
-            currentTest = allTests.find(t => t.id === docId);
+        // --- TEST TAKING ENGINE ---
+        function startTest(testId) {
+            currentTest = allTests.find(t => t.id === testId);
             currentQuestionIndex = 0;
             userAnswers = new Array(currentTest.questions.length).fill(null);
+            
             showSection('test-interface');
             document.getElementById('test-title-display').innerText = currentTest.title;
-            startTimer(currentTest.duration);
             renderQuestion();
+            startTimer(currentTest.duration);
         }
 
-        function startTimer(minutes) {
-            let time = minutes * 60;
+        function startTimer(mins) {
+            let time = mins * 60;
             const display = document.getElementById('timer-display');
             clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                let m = Math.floor(time / 60); let s = time % 60;
-                display.innerText = `${m<10?'0'+m:m}:${s<10?'0'+s:s}`;
+                let m = Math.floor(time / 60);
+                let s = time % 60;
+                display.innerText = `${m}:${s < 10 ? '0'+s : s}`;
                 if (time <= 0) { clearInterval(timerInterval); submitTest(); }
                 time--;
             }, 1000);
@@ -346,14 +357,16 @@
             const q = currentTest.questions[currentQuestionIndex];
             const container = document.getElementById('question-container');
             
-            let optsHtml = q.options.map((opt, i) => 
-                `<li class="${userAnswers[currentQuestionIndex] === i ? 'selected' : ''}" onclick="selectAnswer(${i})">${opt}</li>`
-            ).join('');
+            const optsHtml = q.options.map((opt, i) => `
+                <li class="${userAnswers[currentQuestionIndex] === i ? 'selected' : ''}" onclick="selectAnswer(${i})">
+                    ${opt}
+                </li>
+            `).join('');
 
             container.innerHTML = `
+                <h4>Question ${currentQuestionIndex + 1}</h4>
                 <div class="question-card">
-                    <h4>Q${currentQuestionIndex + 1}</h4>
-                    <div class="question-content">${q.question}</div>
+                    <div style="margin-bottom:15px;">${q.question}</div>
                     ${q.image ? `<img src="${q.image}" class="question-image">` : ''}
                     <ul class="options-list">${optsHtml}</ul>
                 </div>
@@ -361,70 +374,200 @@
             
             if(window.MathJax) MathJax.typesetPromise();
 
+            // Button Logic
             const isLast = currentQuestionIndex === currentTest.questions.length - 1;
             document.getElementById('next-btn').classList.toggle('hidden', isLast);
             document.getElementById('submit-btn').classList.toggle('hidden', !isLast);
         }
 
-        function selectAnswer(i) { userAnswers[currentQuestionIndex] = i; renderQuestion(); }
-        function nextQuestion() { if(userAnswers[currentQuestionIndex] === null) return alert("Select answer!"); currentQuestionIndex++; renderQuestion(); }
-        
-        // --- NEW: DETAILED ANALYSIS ---
-        function submitTest() {
+        function selectAnswer(idx) {
+            userAnswers[currentQuestionIndex] = idx;
+            renderQuestion();
+        }
+
+        function nextQuestion() {
+            if(userAnswers[currentQuestionIndex] === null) return alert("Please select an answer.");
+            currentQuestionIndex++;
+            renderQuestion();
+        }
+
+        async function submitTest() {
             clearInterval(timerInterval);
+            document.getElementById('loading-indicator').classList.remove('hidden');
+
             let score = 0;
-            const analysisContainer = document.getElementById('detailed-analysis-container');
-            analysisContainer.innerHTML = ''; // Clear previous
-
-            currentTest.questions.forEach((q, i) => { 
-                const userChoice = userAnswers[i];
-                const isCorrect = (userChoice === q.answer);
-                if(isCorrect) score++;
-
-                // Determine status label
-                let statusLabel = "";
-                if (userChoice === null) statusLabel = `<span class="status-skipped">Skipped</span>`;
-                else if (isCorrect) statusLabel = `<span class="status-correct">Correct</span>`;
-                else statusLabel = `<span class="status-wrong">Wrong</span>`;
-
-                // Build Options for Review
-                let reviewOptsHtml = q.options.map((opt, optIdx) => {
-                    let className = "analysis-option";
-                    // If this option is the Correct Answer -> Green
-                    if (optIdx === q.answer) className += " opt-correct";
-                    // If User selected this but it was Wrong -> Red
-                    else if (userChoice === optIdx && !isCorrect) className += " opt-wrong";
-                    
-                    return `<div class="${className}">${opt}</div>`;
+            const analysisHtml = currentTest.questions.map((q, i) => {
+                const isCorrect = (userAnswers[i] === q.answer);
+                if (isCorrect) score++;
+                
+                const optsAnalysis = q.options.map((opt, oIdx) => {
+                    let style = "padding:5px; border:1px solid #eee; margin:2px;";
+                    if (oIdx === q.answer) style += " background:#d4edda; color:#155724; font-weight:bold;";
+                    else if (userAnswers[i] === oIdx) style += " background:#f8d7da; color:#721c24; text-decoration:line-through;";
+                    return `<div style="${style}">${opt}</div>`;
                 }).join('');
 
-                // Create Card
-                const card = document.createElement('div');
-                card.className = "analysis-card";
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between;">
-                        <strong>Q${i+1}</strong>
-                        ${statusLabel}
+                return `
+                    <div style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                        <p><strong>Q${i+1}:</strong> ${isCorrect ? '<span class="status-correct">Correct</span>' : '<span class="status-wrong">Wrong</span>'}</p>
+                        <div>${q.question}</div>
+                        ${q.image ? `<img src="${q.image}" style="max-height:100px;">` : ''}
+                        <div style="margin-top:5px;">${optsAnalysis}</div>
                     </div>
-                    <div class="question-content" style="margin:10px 0;">${q.question}</div>
-                    ${q.image ? `<img src="${q.image}" class="question-image">` : ''}
-                    <div>${reviewOptsHtml}</div>
                 `;
-                analysisContainer.appendChild(card);
-            });
+            }).join('');
 
+            // SAVE RESULT TO CLOUD
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    history: firebase.firestore.FieldValue.arrayUnion({
+                        title: currentTest.title,
+                        testId: currentTest.id,
+                        score: score,
+                        total: currentTest.questions.length,
+                        date: new Date()
+                    })
+                });
+            } catch (e) {
+                console.error("Error saving score:", e);
+                // Fallback if user doc doesn't exist (legacy users)
+                await db.collection('users').doc(currentUser.uid).set({
+                    email: currentUser.email,
+                    history: [{
+                        title: currentTest.title,
+                        testId: currentTest.id,
+                        score: score,
+                        total: currentTest.questions.length,
+                        date: new Date()
+                    }]
+                }, { merge: true });
+            }
+
+            document.getElementById('loading-indicator').classList.add('hidden');
             showSection('result-screen');
             document.getElementById('score-display').innerText = `${score} / ${currentTest.questions.length}`;
-            document.getElementById('percentage-display').innerText = `Score: ${((score/currentTest.questions.length)*100).toFixed(2)}%`;
-            
-            // Re-render Math for the analysis section
+            document.getElementById('percentage-display').innerText = `Percentage: ${((score/currentTest.questions.length)*100).toFixed(2)}%`;
+            document.getElementById('detailed-analysis-container').innerHTML = analysisHtml;
             if(window.MathJax) MathJax.typesetPromise();
         }
 
-        function quitTest() { if(confirm("Quit?")) showSection('student-dashboard'); }
+        function quitTest() {
+            if(confirm("Exit test? Progress will be lost.")) showSection('student-dashboard');
+        }
 
-        // Initial Load
-        fetchTestsFromCloud();
+        // --- ADMIN FUNCTIONS ---
+        function attemptAdminLogin() {
+            const input = prompt("Enter Admin Password:");
+            if (input === ADMIN_PASSWORD) showSection('admin-panel');
+            else alert("Access Denied");
+        }
+
+        function loadAdminData() {
+            const container = document.getElementById('admin-test-list');
+            if (allTests.length === 0) {
+                container.innerHTML = "<p>No tests found.</p>";
+                return;
+            }
+            container.innerHTML = `<table>
+                <thead><tr><th>Title</th><th>Questions</th><th>Actions</th></tr></thead>
+                <tbody>
+                    ${allTests.map(t => `
+                        <tr>
+                            <td>${t.title}</td>
+                            <td>${t.questions.length}</td>
+                            <td>
+                                <button class="btn-danger btn-sm" onclick="deleteTest('${t.id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>`;
+        }
+
+        // Image Helper
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+
+        async function addQuestionToStage() {
+            const qText = document.getElementById('q-text').value;
+            const imgInput = document.getElementById('q-image');
+            const opts = [1,2,3,4].map(i => document.getElementById(`opt-${i}`).value);
+            const correct = document.getElementById('correct-opt').value;
+
+            if(!qText && imgInput.files.length === 0) return alert("Please add question text or image.");
+            if(opts.some(o => !o)) return alert("Please fill all 4 options.");
+
+            let imgData = null;
+            if(imgInput.files.length > 0) {
+                if(imgInput.files[0].size > 500000) return alert("Image too large (>500KB). Please compress it.");
+                imgData = await toBase64(imgInput.files[0]);
+            }
+
+            stagingQuestions.push({
+                question: qText,
+                image: imgData,
+                options: opts,
+                answer: parseInt(correct)
+            });
+
+            // Reset Inputs
+            document.getElementById('q-text').value = '';
+            document.getElementById('q-image').value = '';
+            [1,2,3,4].forEach(i => document.getElementById(`opt-${i}`).value = '');
+            
+            updateStagingUI();
+        }
+
+        function updateStagingUI() {
+            document.getElementById('q-count').innerText = stagingQuestions.length;
+            document.getElementById('staging-list').innerHTML = stagingQuestions.map((q, i) => `
+                <div style="border-bottom:1px solid #eee; padding:5px; display:flex; justify-content:space-between;">
+                    <span>Q${i+1}: ${q.question.substring(0, 20)}...</span>
+                    <button class="btn-danger btn-sm" onclick="stagingQuestions.splice(${i}, 1); updateStagingUI();">X</button>
+                </div>
+            `).join('');
+        }
+
+        async function saveTestToCloud() {
+            const title = document.getElementById('new-test-title').value;
+            const dur = document.getElementById('new-test-duration').value;
+            
+            if(!title || stagingQuestions.length === 0) return alert("Test must have a title and at least one question.");
+
+            const btn = document.getElementById('save-test-btn');
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            try {
+                await db.collection('tests').add({
+                    title: title,
+                    duration: parseInt(dur),
+                    questions: stagingQuestions,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("Test Uploaded Successfully!");
+                stagingQuestions = [];
+                document.getElementById('new-test-title').value = '';
+                updateStagingUI();
+                document.getElementById('create-test-form').classList.add('hidden');
+                loadAdminData(); // Refresh list
+            } catch (e) {
+                alert("Error saving: " + e.message);
+            }
+            btn.innerText = "Save Test to Cloud";
+            btn.disabled = false;
+        }
+
+        async function deleteTest(id) {
+            if(confirm("Are you sure? This cannot be undone.")) {
+                await db.collection('tests').doc(id).delete();
+                loadAdminData();
+            }
+        }
     </script>
 </body>
 </html>
