@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NET Mock Test Portal (Cloud Edition)</title>
+    <title>NET Mock Test Portal (Live)</title>
+    
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
         /* --- CSS --- */
@@ -14,10 +18,17 @@
         nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
         nav a { color: white; text-decoration: none; cursor: pointer; font-weight: bold; }
         nav a:hover { color: #f39c12; }
+        
         .container { max-width: 900px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .hidden { display: none; }
         .flex-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        
+        /* Input Styles */
         input[type="text"], input[type="number"], select, input[type="file"], input[type="password"] { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        
+        /* Textarea for big questions */
+        textarea { width: 100%; height: 100px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
+
         button { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; font-size: 0.9rem; }
         .btn-primary { background-color: #3498db; color: white; }
         .btn-success { background-color: #27ae60; color: white; }
@@ -25,13 +36,15 @@
         .btn-warning { background-color: #f39c12; color: white; }
         .btn-secondary { background-color: #7f8c8d; color: white; }
         .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
-        th { background-color: #f8f9fa; }
+
+        /* Tables inside Questions */
+        .question-content table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9rem; }
+        .question-content th, .question-content td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .question-content th { background-color: #f2f2f2; }
+
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Test Styles */
         .question-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
         .question-image { max-width: 100%; max-height: 300px; margin: 10px 0; border: 1px solid #ddd; display: block; }
         .options-list { list-style: none; padding: 0; }
@@ -44,7 +57,7 @@
 <body>
 
     <nav>
-        <h1>NET Mock Test Hub <span style="font-size:0.8rem; font-weight:normal;">(Cloud Connected)</span></h1>
+        <h1>NET Mock Test Hub</h1>
         <ul>
             <li><a onclick="showSection('student-dashboard')">Student Zone</a></li>
             <li><a onclick="attemptAdminLogin()">Admin Panel</a></li>
@@ -54,7 +67,7 @@
     <div class="container">
         
         <div id="loading-indicator" class="hidden" style="text-align:center; padding: 20px;">
-            <div class="loader"></div> Loading Cloud Data...
+            <div class="loader"></div> Loading...
         </div>
 
         <div id="student-dashboard">
@@ -101,21 +114,27 @@
 
             <div style="background: #ecf0f1; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
                 <label>Test Title:</label>
-                <input type="text" id="new-test-title" placeholder="e.g., UGC NET Paper 1">
+                <input type="text" id="new-test-title" placeholder="e.g., UGC NET Paper 1 - 2023">
                 <label>Duration (Minutes):</label>
-                <input type="number" id="new-test-duration" value="30">
+                <input type="number" id="new-test-duration" value="60">
             </div>
             
             <div style="background: #fdfdfd; padding: 15px; border: 1px solid #ccc;">
-                <h4>Add Question</h4>
-                <input type="text" id="q-text" placeholder="Question Text (e.g., 10<sup>-1</sup>)">
+                <h4>Add Question (HTML & Math Supported)</h4>
+                <small style="color:#666;">Tip: You can paste HTML tables here. Use <code>\( x^2 \)</code> for math.</small>
+                
+                <textarea id="q-text" placeholder="Paste Question text here..."></textarea>
+                
+                <label>Upload Image (Diagrams/Graphs):</label>
                 <input type="file" id="q-image" accept="image/*">
+                
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <input type="text" id="opt-1" placeholder="Option 1">
-                    <input type="text" id="opt-2" placeholder="Option 2">
-                    <input type="text" id="opt-3" placeholder="Option 3">
-                    <input type="text" id="opt-4" placeholder="Option 4">
+                    <textarea id="opt-1" style="height:50px;" placeholder="Option 1"></textarea>
+                    <textarea id="opt-2" style="height:50px;" placeholder="Option 2"></textarea>
+                    <textarea id="opt-3" style="height:50px;" placeholder="Option 3"></textarea>
+                    <textarea id="opt-4" style="height:50px;" placeholder="Option 4"></textarea>
                 </div>
+                
                 <label>Correct Option:</label>
                 <select id="correct-opt">
                     <option value="0">Option 1</option>
@@ -138,46 +157,41 @@
 
     <script>
         // ==========================================
-        //  STEP 1: PASTE FIREBASE CONFIG HERE
+        //  YOUR FIREBASE CONFIG IS INTEGRATED HERE
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCkmD-GkkU8DkuzuhLDXmena2HOVfb-tbY",
-    authDomain: "mock-test-88fbc.firebaseapp.com",
-    projectId: "mock-test-88fbc",
-    storageBucket: "mock-test-88fbc.firebasestorage.app",
-    messagingSenderId: "45637040362",
-    appId: "1:45637040362:web:393d258292d58f99f53f93",
-    measurementId: "G-ZQ0P06H40C"
+            authDomain: "mock-test-88fbc.firebaseapp.com",
+            projectId: "mock-test-88fbc",
+            storageBucket: "mock-test-88fbc.firebasestorage.app",
+            messagingSenderId: "45637040362",
+            appId: "1:45637040362:web:393d258292d58f99f53f93",
+            measurementId: "G-ZQ0P06H40C"
         };
         // ==========================================
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-
-        // --- GLOBAL VARIABLES ---
         const ADMIN_PASSWORD = "admin"; 
+
         let allTests = [];
-        let editingId = null; // Stores Cloud Doc ID
+        let editingId = null;
         let isAdminLoggedIn = false;
         let currentTest = null;
         let currentQuestionIndex = 0;
         let userAnswers = [];
-        let timerInterval = null;
         let newTestStaging = []; 
+        let timerInterval = null;
 
-        // --- FIREBASE FUNCTIONS ---
+        // --- FETCH & SAVE ---
         async function fetchTestsFromCloud() {
             document.getElementById('loading-indicator').classList.remove('hidden');
             try {
-                const snapshot = await db.collection("tests").get();
+                const snapshot = await db.collection("tests").orderBy('createdAt', 'desc').get();
                 allTests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderStudentTestList();
                 if(isAdminLoggedIn) renderAdminTestList();
-            } catch (error) {
-                console.error("Error fetching tests:", error);
-                alert("Failed to load tests. Check console.");
-            }
+            } catch (error) { console.error(error); }
             document.getElementById('loading-indicator').classList.add('hidden');
         }
 
@@ -185,44 +199,26 @@
             const title = document.getElementById('new-test-title').value;
             const duration = document.getElementById('new-test-duration').value;
             if(!title || newTestStaging.length === 0) return alert("Title and Questions required.");
-
             const testObj = {
                 title: title,
                 duration: parseInt(duration),
                 questions: newTestStaging,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-
             const btn = document.getElementById('save-main-btn');
-            btn.innerText = "Saving to Cloud...";
-            btn.disabled = true;
-
+            btn.innerText = "Saving..."; btn.disabled = true;
             try {
-                if (editingId) {
-                    await db.collection("tests").doc(editingId).update(testObj);
-                    alert("Test Updated in Cloud!");
-                } else {
-                    await db.collection("tests").add(testObj);
-                    alert("Test Created in Cloud!");
-                }
-                resetAdminForm();
-                fetchTestsFromCloud(); // Refresh list
-            } catch (e) {
-                console.error(e);
-                alert("Error saving: " + e.message);
-            }
-            btn.innerText = "Save Test to Cloud";
-            btn.disabled = false;
+                if(editingId) await db.collection("tests").doc(editingId).update(testObj);
+                else await db.collection("tests").add(testObj);
+                alert("Saved!"); resetAdminForm(); fetchTestsFromCloud();
+            } catch (e) { alert("Error: " + e.message); }
+            btn.innerText = "Save Test to Cloud"; btn.disabled = false;
         }
 
         async function deleteTestFromCloud(docId) {
-            if(!confirm("Delete this test permanently from Cloud?")) return;
-            try {
-                await db.collection("tests").doc(docId).delete();
-                fetchTestsFromCloud();
-            } catch (e) {
-                alert("Error deleting: " + e.message);
-            }
+            if(!confirm("Delete?")) return;
+            await db.collection("tests").doc(docId).delete();
+            fetchTestsFromCloud();
         }
 
         // --- NAVIGATION ---
@@ -233,31 +229,20 @@
             });
             if(id === 'admin-panel' && !isAdminLoggedIn) { attemptAdminLogin(); return; }
             document.getElementById(id).classList.remove('hidden');
-            
-            // Re-fetch data to ensure sync
-            if(id === 'student-dashboard' || id === 'admin-panel') fetchTestsFromCloud();
+            if(id === 'student-dashboard') fetchTestsFromCloud();
         }
 
         function attemptAdminLogin() {
             if (isAdminLoggedIn) { showSection('admin-panel'); return; }
-            const input = prompt("Enter Admin Password:");
-            if (input === ADMIN_PASSWORD) {
-                isAdminLoggedIn = true;
-                showSection('admin-panel');
-            } else { alert("Access Denied"); showSection('student-dashboard'); }
+            if (prompt("Password:") === ADMIN_PASSWORD) { isAdminLoggedIn = true; showSection('admin-panel'); }
+            else { alert("Wrong Password"); showSection('student-dashboard'); }
         }
         function logoutAdmin() { isAdminLoggedIn = false; showSection('student-dashboard'); }
 
         // --- ADMIN UI ---
         function renderAdminTestList() {
             const container = document.getElementById('admin-test-list');
-            if(allTests.length === 0) { container.innerHTML = '<p>No tests found.</p>'; return; }
-            let html = `<table><thead><tr><th>Title</th><th>Qs</th><th>Action</th></tr></thead><tbody>`;
-            allTests.forEach((test) => {
-                html += `<tr><td>${test.title}</td><td>${test.questions ? test.questions.length : 0}</td><td><button class="btn-warning btn-sm" onclick="editTest('${test.id}')">Edit</button> <button class="btn-danger btn-sm" onclick="deleteTestFromCloud('${test.id}')">Delete</button></td></tr>`;
-            });
-            html += `</tbody></table>`;
-            container.innerHTML = html;
+            container.innerHTML = allTests.length ? `<table><thead><tr><th>Title</th><th>Qs</th><th>Action</th></tr></thead><tbody>${allTests.map(t => `<tr><td>${t.title}</td><td>${t.questions.length}</td><td><button class="btn-warning btn-sm" onclick="editTest('${t.id}')">Edit</button> <button class="btn-danger btn-sm" onclick="deleteTestFromCloud('${t.id}')">Delete</button></td></tr>`).join('')}</tbody></table>` : '<p>No tests.</p>';
         }
 
         function editTest(docId) {
@@ -268,51 +253,44 @@
             document.getElementById('new-test-duration').value = test.duration;
             newTestStaging = [...test.questions]; 
             renderStagingQueue();
-            document.getElementById('form-header').innerText = "Edit Cloud Test: " + test.title;
-            document.getElementById('save-main-btn').innerText = "Update Cloud Test";
-            document.getElementById('save-main-btn').className = "btn-warning";
+            document.getElementById('form-header').innerText = "Edit: " + test.title;
+            document.getElementById('save-main-btn').innerText = "Update";
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
             document.getElementById('form-header').scrollIntoView({behavior: "smooth"});
         }
 
         function resetAdminForm() {
-            editingId = null;
-            newTestStaging = [];
+            editingId = null; newTestStaging = [];
             document.getElementById('new-test-title').value = '';
-            document.getElementById('new-test-duration').value = '30';
-            clearQuestionInputs();
-            renderStagingQueue();
+            clearQuestionInputs(); renderStagingQueue();
             document.getElementById('form-header').innerText = "Create New Test";
             document.getElementById('save-main-btn').innerText = "Save Test to Cloud";
-            document.getElementById('save-main-btn').className = "btn-success";
             document.getElementById('cancel-edit-btn').classList.add('hidden');
         }
 
-        // --- QUESTION HANDLING (Same as before) ---
+        // --- QUESTION LOGIC ---
         const toBase64 = file => new Promise((resolve, reject) => {
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error);
         });
 
         async function processAndAddQuestion() {
-            const qText = document.getElementById('q-text').value;
+            const qText = document.getElementById('q-text').value; // Contains HTML
             const imgInput = document.getElementById('q-image');
             const opts = [1,2,3,4].map(i => document.getElementById(`opt-${i}`).value);
             const correct = document.getElementById('correct-opt').value;
 
-            if(!qText && imgInput.files.length === 0) return alert("Add text or image.");
-            if(opts.some(o => !o)) return alert("Fill all options.");
+            if(!qText && imgInput.files.length === 0) return alert("Add content.");
+            if(opts.some(o => !o)) return alert("Fill options.");
 
             let imgData = null;
             if (imgInput.files.length > 0) {
-                // Warning for Cloud Size
-                if(imgInput.files[0].size > 500000) return alert("Image too large! Please use images under 500KB for cloud storage.");
-                try { imgData = await toBase64(imgInput.files[0]); } catch (e) { return alert("Image error"); }
+                if(imgInput.files[0].size > 500000) return alert("Image too big (>500KB).");
+                imgData = await toBase64(imgInput.files[0]);
             }
 
             newTestStaging.push({ question: qText, image: imgData, options: opts, answer: parseInt(correct) });
-            clearQuestionInputs();
-            renderStagingQueue();
+            clearQuestionInputs(); renderStagingQueue();
         }
 
         function clearQuestionInputs() {
@@ -323,27 +301,12 @@
         function renderStagingQueue() {
             const list = document.getElementById('staging-list');
             document.getElementById('q-count').innerText = newTestStaging.length;
-            list.innerHTML = '';
-            if(newTestStaging.length === 0) { list.innerHTML = '<p style="color:#777;">No questions added yet.</p>'; return; }
-            newTestStaging.forEach((q, idx) => {
-                const div = document.createElement('div');
-                div.innerHTML = `<div style="display:flex; align-items:center; border-bottom:1px solid #eee; padding:5px;"><span style="font-weight:bold; margin-right:10px;">Q${idx+1}</span>${q.image ? `<img src="${q.image}" style="height:30px;">` : ''}<span>${q.question ? q.question.substring(0, 20) : 'Image'}...</span> <button class="btn-danger btn-sm" style="margin-left:auto;" onclick="removeFromStaging(${idx})">X</button></div>`;
-                list.appendChild(div);
-            });
+            list.innerHTML = newTestStaging.map((q, i) => `<div style="border-bottom:1px solid #eee; padding:5px; display:flex; justify-content:space-between;"><span>Q${i+1}</span> <button class="btn-danger btn-sm" onclick="newTestStaging.splice(${i},1);renderStagingQueue()">X</button></div>`).join('');
         }
-        function removeFromStaging(idx) { newTestStaging.splice(idx, 1); renderStagingQueue(); }
 
-        // --- STUDENT UI (Same as before) ---
+        // --- STUDENT UI (RENDERING RICH TEXT) ---
         function renderStudentTestList() {
-            const container = document.getElementById('test-list-container');
-            container.innerHTML = '';
-            if (allTests.length === 0) { container.innerHTML = '<p>No tests available.</p>'; return; }
-            allTests.forEach((test) => {
-                const div = document.createElement('div');
-                div.className = 'question-card flex-row';
-                div.innerHTML = `<div><strong>${test.title}</strong><br><small>${test.questions ? test.questions.length : 0} Questions | ${test.duration} Mins</small></div><button class="btn-primary" onclick="startTest('${test.id}')">Start</button>`;
-                container.appendChild(div);
-            });
+            document.getElementById('test-list-container').innerHTML = allTests.map(t => `<div class="question-card flex-row"><div><strong>${t.title}</strong><br><small>${t.questions.length} Qs | ${t.duration} min</small></div><button class="btn-primary" onclick="startTest('${t.id}')">Start</button></div>`).join('');
         }
 
         function startTest(docId) {
@@ -371,18 +334,33 @@
         function renderQuestion() {
             const q = currentTest.questions[currentQuestionIndex];
             const container = document.getElementById('question-container');
-            let optsHtml = '';
-            q.options.forEach((opt, i) => {
-                optsHtml += `<li class="${userAnswers[currentQuestionIndex] === i ? 'selected' : ''}" onclick="selectAnswer(${i})">${opt}</li>`;
-            });
-            container.innerHTML = `<div class="question-card"><h4>Q${currentQuestionIndex + 1}: ${q.question}</h4>${q.image ? `<img src="${q.image}" class="question-image">` : ''}<ul class="options-list">${optsHtml}</ul></div>`;
+            
+            // Build Options with HTML support
+            let optsHtml = q.options.map((opt, i) => 
+                `<li class="${userAnswers[currentQuestionIndex] === i ? 'selected' : ''}" onclick="selectAnswer(${i})">${opt}</li>`
+            ).join('');
+
+            // Render content using innerHTML to support tables/math
+            container.innerHTML = `
+                <div class="question-card">
+                    <h4>Q${currentQuestionIndex + 1}</h4>
+                    <div class="question-content">${q.question}</div>
+                    ${q.image ? `<img src="${q.image}" class="question-image">` : ''}
+                    <ul class="options-list">${optsHtml}</ul>
+                </div>
+            `;
+            
+            // Trigger MathJax to process the new content
+            if(window.MathJax) MathJax.typesetPromise();
+
             const isLast = currentQuestionIndex === currentTest.questions.length - 1;
             document.getElementById('next-btn').classList.toggle('hidden', isLast);
             document.getElementById('submit-btn').classList.toggle('hidden', !isLast);
         }
 
         function selectAnswer(i) { userAnswers[currentQuestionIndex] = i; renderQuestion(); }
-        function nextQuestion() { if(userAnswers[currentQuestionIndex] === null) return alert("Select an answer!"); currentQuestionIndex++; renderQuestion(); }
+        function nextQuestion() { if(userAnswers[currentQuestionIndex] === null) return alert("Select answer!"); currentQuestionIndex++; renderQuestion(); }
+        
         function submitTest() {
             clearInterval(timerInterval);
             let score = 0;
@@ -393,7 +371,7 @@
         }
         function quitTest() { if(confirm("Quit?")) showSection('student-dashboard'); }
 
-        // Init
+        // Initial Load
         fetchTestsFromCloud();
     </script>
 </body>
